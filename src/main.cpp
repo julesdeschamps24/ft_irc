@@ -1,3 +1,4 @@
+#include "Server.hpp"
 #include "error.hpp"
 #include <iostream>
 #include <sstream>
@@ -28,7 +29,15 @@ int main(int ac, char **av)
     if(password.empty())
         return(errorReturn(ERR_PASSWORD, 1));
 
-    std::cout << "ircserv will listen on port " << port
-        << " with password \"" << password << "\"" << std::endl;
+    try
+    {
+        Server  server(port, password);
+        server.setup();
+        server.run();
+    }
+    catch(const std::exception& e)
+    {
+        return(errorReturn(e.what(), 1));
+    }
     return(0);
 }

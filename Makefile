@@ -4,7 +4,8 @@ CC = c++
 CFLAGS = -Wall -Wextra -Werror -std=c++98 -Iinc
 
 SRCS = src/main.cpp \
-		src/error.cpp
+		src/error.cpp \
+		src/Server.cpp
 
 OBJS = $(SRCS:.cpp=.o)
 
