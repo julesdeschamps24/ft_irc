@@ -28,15 +28,20 @@ Server& Server::operator=(const Server& other)
         _password = other._password;
         _listenFd = other._listenFd;
         _pollFds = other._pollFds;
-        _clientFds = other._clientFds;
+        _clients = other._clients;
     }
     return(*this);
 }
 
 Server::~Server()
 {
-    for(size_t i = 0; i < _clientFds.size(); i++)
-        close(_clientFds[i]);
+    std::map<int, Client*>::iterator  it;
+
+    for(it = _clients.begin(); it != _clients.end(); ++it)
+    {
+        close(it->first);
+        delete it->second;
+    }
     if(_listenFd != -1)
         close(_listenFd);
 }
@@ -75,8 +80,45 @@ void  Server::acceptClient()
     if(clientFd < 0)
         return;
     fcntl(clientFd, F_SETFL, O_NONBLOCK);
-    _clientFds.push_back(clientFd);
+
+    _clients[clientFd] = new Client(clientFd);
+
+    struct pollfd  pfd;
+    pfd.fd = clientFd;
+    pfd.events = POLLIN;
+    pfd.revents = 0;
+    _pollFds.push_back(pfd);
+
     std::cout << "client connected #" << clientFd << std::endl;
+}
+
+bool  Server::receiveFromClient(int fd)
+{
+    char     buf[4096];
+    ssize_t  r = recv(fd, buf, sizeof(buf), 0);
+
+    if(r <= 0)
+        return(false);
+    _clients[fd]->appendToReadBuffer(std::string(buf, r));
+    std::cout << "[#" << fd << "] +" << r << " bytes | buffer: \""
+        << _clients[fd]->getReadBuffer() << "\"" << std::endl;
+    return(true);
+}
+
+void  Server::removeClient(int fd)
+{
+    close(fd);
+    delete _clients[fd];
+    _clients.erase(fd);
+    for(size_t i = 0; i < _pollFds.size(); i++)
+    {
+        if(_pollFds[i].fd == fd)
+        {
+            _pollFds.erase(_pollFds.begin() + i);
+            break;
+        }
+    }
+    std::cout << "client #" << fd << " disconnected" << std::endl;
 }
 
 void  Server::run()
@@ -93,7 +135,19 @@ void  Server::run()
         if(poll(&_pollFds[0], _pollFds.size(), -1) < 0)
             throwSystemError("poll");
 
-        if(_pollFds[0].revents & POLLIN)
-            acceptClient();
+        std::vector<int>  toRemove;
+        size_t            n = _pollFds.size();
+
+        for(size_t i = 0; i < n; i++)
+        {
+            if((_pollFds[i].revents & POLLIN) == 0)
+                continue;
+            if(_pollFds[i].fd == _listenFd)
+                acceptClient();
+            else if(receiveFromClient(_pollFds[i].fd) == false)
+                toRemove.push_back(_pollFds[i].fd);
+        }
+        for(size_t i = 0; i < toRemove.size(); i++)
+            removeClient(toRemove[i]);
     }
 }

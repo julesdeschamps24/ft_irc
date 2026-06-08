@@ -1,7 +1,9 @@
 #pragma once
 
+#include "Client.hpp"
 #include <string>
 #include <vector>
+#include <map>
 #include <poll.h>
 
 class Server
@@ -18,10 +20,12 @@ class Server
 
     private:
         void  acceptClient();
+        bool  receiveFromClient(int fd);
+        void  removeClient(int fd);
 
         int                         _port;
         std::string                 _password;
         int                         _listenFd;
         std::vector<struct pollfd>  _pollFds;
-        std::vector<int>            _clientFds;
+        std::map<int, Client*>      _clients;
 };
