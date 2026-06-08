@@ -1,7 +1,9 @@
 #include "Server.hpp"
 #include "error.hpp"
+#include "Message.hpp"
 #include <iostream>
 #include <cstring>
+#include <cctype>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/socket.h>
@@ -13,7 +15,9 @@ Server::Server()
 
 Server::Server(int port, const std::string& password)
     : _port(port), _password(password), _listenFd(-1)
-{}
+{
+    initHandlers();
+}
 
 Server::Server(const Server& copy)
 {
@@ -29,6 +33,7 @@ Server& Server::operator=(const Server& other)
         _listenFd = other._listenFd;
         _pollFds = other._pollFds;
         _clients = other._clients;
+        _handlers = other._handlers;
     }
     return(*this);
 }
@@ -103,7 +108,7 @@ bool  Server::receiveFromClient(int fd)
 
     std::string  line;
     while(_clients[fd]->extractLine(line))
-        std::cout << "[#" << fd << "] command: \"" << line << "\"" << std::endl;
+        dispatch(*_clients[fd], parseMessage(line));
     return(true);
 }
 
@@ -121,6 +126,31 @@ void  Server::removeClient(int fd)
         }
     }
     std::cout << "client #" << fd << " disconnected" << std::endl;
+}
+
+void  Server::initHandlers()
+{
+    _handlers["PASS"] = &Server::handlePass;
+    _handlers["NICK"] = &Server::handleNick;
+    _handlers["USER"] = &Server::handleUser;
+}
+
+void  Server::dispatch(Client& client, const Message& msg)
+{
+    if(msg.command.empty())
+        return;
+
+    std::string  cmd = msg.command;
+    for(size_t i = 0; i < cmd.size(); i++)
+        cmd[i] = std::toupper(static_cast<unsigned char>(cmd[i]));
+
+    std::map<std::string, HandlerType>::iterator  it = _handlers.find(cmd);
+    if(it == _handlers.end())
+    {
+        std::cout << "[#" << client.getFd() << "] unknown command: " << msg.command << std::endl;
+        return;
+    }
+    (this->*(it->second))(client, msg.params);
 }
 
 void  Server::run()

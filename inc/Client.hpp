@@ -16,7 +16,23 @@ class Client
         void                appendToReadBuffer(const std::string& data);
         bool                extractLine(std::string& line);
 
+        const std::string&  getNickname() const;
+        void                setNickname(const std::string& nickname);
+        const std::string&  getUsername() const;
+        void                setUsername(const std::string& username);
+        const std::string&  getRealname() const;
+        void                setRealname(const std::string& realname);
+        bool                isPassOk() const;
+        void                setPassOk(bool value);
+        bool                isRegistered() const;
+        void                setRegistered(bool value);
+
     private:
         int          _fd;
         std::string  _readBuffer;
+        std::string  _nickname;
+        std::string  _username;
+        std::string  _realname;
+        bool         _passOk;
+        bool         _registered;
 };

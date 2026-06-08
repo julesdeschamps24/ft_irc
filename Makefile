@@ -6,7 +6,9 @@ CFLAGS = -Wall -Wextra -Werror -std=c++98 -Iinc
 SRCS = src/main.cpp \
 		src/error.cpp \
 		src/Server.cpp \
-		src/Client.cpp
+		src/Client.cpp \
+		src/Message.cpp \
+		src/commands/auth.cpp
 
 OBJS = $(SRCS:.cpp=.o)
 
