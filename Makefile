@@ -7,6 +7,7 @@ SRCS = src/main.cpp \
 		src/error.cpp \
 		src/Server.cpp \
 		src/Client.cpp \
+		src/Channel.cpp \
 		src/Message.cpp \
 		src/commands/auth.cpp
 
