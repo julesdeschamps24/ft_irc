@@ -14,6 +14,7 @@ class Client
         int                 getFd() const;
         const std::string&  getReadBuffer() const;
         void                appendToReadBuffer(const std::string& data);
+        bool                extractLine(std::string& line);
 
     private:
         int          _fd;

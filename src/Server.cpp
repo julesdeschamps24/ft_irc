@@ -100,8 +100,10 @@ bool  Server::receiveFromClient(int fd)
     if(r <= 0)
         return(false);
     _clients[fd]->appendToReadBuffer(std::string(buf, r));
-    std::cout << "[#" << fd << "] +" << r << " bytes | buffer: \""
-        << _clients[fd]->getReadBuffer() << "\"" << std::endl;
+
+    std::string  line;
+    while(_clients[fd]->extractLine(line))
+        std::cout << "[#" << fd << "] command: \"" << line << "\"" << std::endl;
     return(true);
 }
 

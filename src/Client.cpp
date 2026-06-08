@@ -39,3 +39,16 @@ void  Client::appendToReadBuffer(const std::string& data)
 {
     _readBuffer += data;
 }
+
+bool  Client::extractLine(std::string& line)
+{
+    std::string::size_type  pos = _readBuffer.find('\n');
+
+    if(pos == std::string::npos)
+        return(false);
+    line = _readBuffer.substr(0, pos);
+    _readBuffer.erase(0, pos + 1);
+    if(line.empty() == false && line[line.size() - 1] == '\r')
+        line.erase(line.size() - 1);
+    return(true);
+}
