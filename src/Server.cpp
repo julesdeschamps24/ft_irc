@@ -116,6 +116,24 @@ bool  Server::receiveFromClient(int fd)
     return(true);
 }
 
+void  Server::sendToClient(Client& client, const std::string& message)
+{
+    client.appendToWriteBuffer(message);
+}
+
+void  Server::flushClient(int fd)
+{
+    Client*  client = _clients[fd];
+
+    if(client->hasDataToWrite() == false)
+        return;
+
+    const std::string&  buf = client->getWriteBuffer();
+    ssize_t  sent = send(fd, buf.c_str(), buf.size(), 0);
+    if(sent > 0)
+        client->consumeWriteBuffer(static_cast<std::string::size_type>(sent));
+}
+
 void  Server::removeClient(int fd)
 {
     close(fd);
@@ -177,6 +195,14 @@ void  Server::run()
 
     while(true)
     {
+        for(size_t i = 0; i < _pollFds.size(); i++)
+        {
+            if(_pollFds[i].fd != _listenFd && _clients[_pollFds[i].fd]->hasDataToWrite())
+                _pollFds[i].events = POLLIN | POLLOUT;
+            else
+                _pollFds[i].events = POLLIN;
+        }
+
         if(poll(&_pollFds[0], _pollFds.size(), -1) < 0)
             throwSystemError("poll");
 
@@ -185,12 +211,24 @@ void  Server::run()
 
         for(size_t i = 0; i < n; i++)
         {
-            if((_pollFds[i].revents & POLLIN) == 0)
+            short  re = _pollFds[i].revents;
+            int    fd = _pollFds[i].fd;
+
+            if(re == 0)
                 continue;
-            if(_pollFds[i].fd == _listenFd)
-                acceptClient();
-            else if(receiveFromClient(_pollFds[i].fd) == false)
-                toRemove.push_back(_pollFds[i].fd);
+            if(fd == _listenFd)
+            {
+                if(re & POLLIN)
+                    acceptClient();
+                continue;
+            }
+            if((re & POLLIN) && receiveFromClient(fd) == false)
+            {
+                toRemove.push_back(fd);
+                continue;
+            }
+            if(re & POLLOUT)
+                flushClient(fd);
         }
         for(size_t i = 0; i < toRemove.size(); i++)
             removeClient(toRemove[i]);

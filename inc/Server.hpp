@@ -25,9 +25,11 @@ class Server
 
         void  acceptClient();
         bool  receiveFromClient(int fd);
+        void  flushClient(int fd);
         void  removeClient(int fd);
         void  initHandlers();
         void  dispatch(Client& client, const Message& msg);
+        void  sendToClient(Client& client, const std::string& message);
 
         // auth (commands/auth.cpp) -- B
         void  handlePass(Client& client, const std::vector<std::string>& params);

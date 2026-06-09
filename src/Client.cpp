@@ -19,6 +19,7 @@ Client& Client::operator=(const Client& other)
     {
         _fd = other._fd;
         _readBuffer = other._readBuffer;
+        _writeBuffer = other._writeBuffer;
         _nickname = other._nickname;
         _username = other._username;
         _realname = other._realname;
@@ -56,6 +57,26 @@ bool  Client::extractLine(std::string& line)
     if(line.empty() == false && line[line.size() - 1] == '\r')
         line.erase(line.size() - 1);
     return(true);
+}
+
+void  Client::appendToWriteBuffer(const std::string& data)
+{
+    _writeBuffer += data;
+}
+
+const std::string&  Client::getWriteBuffer() const
+{
+    return(_writeBuffer);
+}
+
+bool  Client::hasDataToWrite() const
+{
+    return(_writeBuffer.empty() == false);
+}
+
+void  Client::consumeWriteBuffer(std::string::size_type n)
+{
+    _writeBuffer.erase(0, n);
 }
 
 const std::string&  Client::getNickname() const

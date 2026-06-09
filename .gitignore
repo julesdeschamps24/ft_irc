@@ -1,0 +1,21 @@
+# ---- Build artifacts ----
+*.o
+*.d
+*.a
+*.out
+
+# Final executable
+ircserv
+
+# ---- Local reference material (not part of the deliverable) ----
+CPP_9/
+bircd/
+en.subject.pdf
+docs/
+
+# ---- OS / editor junk ----
+.DS_Store
+*.swp
+*~
+.vscode/
+.idea/

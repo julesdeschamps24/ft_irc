@@ -7,10 +7,13 @@ void  Server::handlePrivmsg(Client& client, const std::vector<std::string>& para
     std::cout << "[#" << client.getFd() << "] PRIVMSG (" << params.size() << " param)" << std::endl;
 }
 
-// TODO (B): reply with PONG <token>
+// EXAMPLE of using sendToClient (B can refine the exact RFC format).
+// A client sends "PING <token>"; the server must answer "PONG <token>".
 void  Server::handlePing(Client& client, const std::vector<std::string>& params)
 {
-    std::cout << "[#" << client.getFd() << "] PING (" << params.size() << " param)" << std::endl;
+    if(params.empty())
+        return;
+    sendToClient(client, "PONG :" + params[0] + "\r\n");
 }
 
 // TODO (B): notify channels, then disconnect the client
