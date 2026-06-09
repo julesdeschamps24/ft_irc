@@ -33,6 +33,7 @@ Server& Server::operator=(const Server& other)
         _listenFd = other._listenFd;
         _pollFds = other._pollFds;
         _clients = other._clients;
+        _channels = other._channels;
         _handlers = other._handlers;
     }
     return(*this);
@@ -40,13 +41,16 @@ Server& Server::operator=(const Server& other)
 
 Server::~Server()
 {
-    std::map<int, Client*>::iterator  it;
+    std::map<int, Client*>::iterator       it;
+    std::map<std::string, Channel*>::iterator  cit;
 
     for(it = _clients.begin(); it != _clients.end(); ++it)
     {
         close(it->first);
         delete it->second;
     }
+    for(cit = _channels.begin(); cit != _channels.end(); ++cit)
+        delete cit->second;
     if(_listenFd != -1)
         close(_listenFd);
 }
@@ -133,6 +137,15 @@ void  Server::initHandlers()
     _handlers["PASS"] = &Server::handlePass;
     _handlers["NICK"] = &Server::handleNick;
     _handlers["USER"] = &Server::handleUser;
+    _handlers["PRIVMSG"] = &Server::handlePrivmsg;
+    _handlers["PING"] = &Server::handlePing;
+    _handlers["QUIT"] = &Server::handleQuit;
+    _handlers["JOIN"] = &Server::handleJoin;
+    _handlers["PART"] = &Server::handlePart;
+    _handlers["KICK"] = &Server::handleKick;
+    _handlers["INVITE"] = &Server::handleInvite;
+    _handlers["TOPIC"] = &Server::handleTopic;
+    _handlers["MODE"] = &Server::handleMode;
 }
 
 void  Server::dispatch(Client& client, const Message& msg)
